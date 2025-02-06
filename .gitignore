@@ -93,7 +93,7 @@ target/
 /models/
 
 # Exclude pyproject.toml
-pyproject.toml
+# pyproject.toml
 
 # Exclude uv.lock
 uv.lock

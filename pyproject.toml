@@ -1,0 +1,10 @@
+[project]
+name = "ai-cookbook"
+version = "0.2.0"
+description = "My local testing on programming AI without frameworks"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "openai>=1.61.1",
+    "python-dotenv>=1.0.1",
+]
