@@ -2,8 +2,11 @@ import json
 import os
 
 import requests
+from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -25,8 +28,15 @@ def get_weather(latitude, longitude):
     return data["current"]
 
 
+# This is a generic function that can be used to call any function we define earlier.
+def call_function(name, args):
+    if name == "get_weather":
+        return get_weather(**args)
+
+
 # --------------------------------------------------------------
 # Step 1: Call model with get_weather tool defined
+# This structure is required by OpenAI to help the model decide on tools.
 # --------------------------------------------------------------
 
 tools = [
@@ -49,15 +59,13 @@ tools = [
     }
 ]
 
-system_prompt = "You are a helpful weather assistant."
-
 messages = [
-    {"role": "system", "content": system_prompt},
+    {"role": "system", "content": "You are a helpful weather assistant."},
     {"role": "user", "content": "What's the weather like in Paris today?"},
 ]
 
 completion = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-4o-mini",
     messages=messages,
     tools=tools,
 )
@@ -66,18 +74,15 @@ completion = client.chat.completions.create(
 # Step 2: Model decides to call function(s)
 # --------------------------------------------------------------
 
+# We just dump for debugging and learning purposes.
 completion.model_dump()
 
 # --------------------------------------------------------------
 # Step 3: Execute get_weather function
 # --------------------------------------------------------------
 
-
-def call_function(name, args):
-    if name == "get_weather":
-        return get_weather(**args)
-
-
+# Here we iterate on tools to get responses from the tools and put them in messages
+# which we will use to call the model again.
 for tool_call in completion.choices[0].message.tool_calls:
     name = tool_call.function.name
     args = json.loads(tool_call.function.arguments)
@@ -103,7 +108,7 @@ class WeatherResponse(BaseModel):
 
 
 completion_2 = client.beta.chat.completions.parse(
-    model="gpt-4o",
+    model="gpt-4o-mini",
     messages=messages,
     tools=tools,
     response_format=WeatherResponse,
