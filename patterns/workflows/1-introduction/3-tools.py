@@ -38,7 +38,6 @@ def call_function(name, args):
 # Step 1: Call model with get_weather tool defined
 # This structure is required by OpenAI to help the model decide on tools.
 # --------------------------------------------------------------
-
 tools = [
     {
         "type": "function",

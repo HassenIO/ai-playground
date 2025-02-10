@@ -1,8 +1,11 @@
 import json
 import os
 
+from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -10,11 +13,10 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 docs: https://platform.openai.com/docs/guides/function-calling
 """
 
+
 # --------------------------------------------------------------
 # Define the knowledge base retrieval tool
 # --------------------------------------------------------------
-
-
 def search_kb(question: str):
     """
     Load the whole knowledge base from the JSON file.
@@ -24,10 +26,15 @@ def search_kb(question: str):
         return json.load(f)
 
 
+# This is a generic function that can be used to call any function we define earlier.
+def call_function(name, args):
+    if name == "search_kb":
+        return search_kb(**args)
+
+
 # --------------------------------------------------------------
 # Step 1: Call model with search_kb tool defined
 # --------------------------------------------------------------
-
 tools = [
     {
         "type": "function",
@@ -55,7 +62,7 @@ messages = [
 ]
 
 completion = client.chat.completions.create(
-    model="gpt-4o",
+    model="gpt-4o-mini",
     messages=messages,
     tools=tools,
 )
@@ -69,13 +76,6 @@ completion.model_dump()
 # --------------------------------------------------------------
 # Step 3: Execute search_kb function
 # --------------------------------------------------------------
-
-
-def call_function(name, args):
-    if name == "search_kb":
-        return search_kb(**args)
-
-
 for tool_call in completion.choices[0].message.tool_calls:
     name = tool_call.function.name
     args = json.loads(tool_call.function.arguments)
@@ -97,7 +97,7 @@ class KBResponse(BaseModel):
 
 
 completion_2 = client.beta.chat.completions.parse(
-    model="gpt-4o",
+    model="gpt-4o-mini",
     messages=messages,
     tools=tools,
     response_format=KBResponse,
@@ -121,7 +121,7 @@ messages = [
 ]
 
 completion_3 = client.beta.chat.completions.parse(
-    model="gpt-4o",
+    model="gpt-4o-mini",
     messages=messages,
     tools=tools,
 )
