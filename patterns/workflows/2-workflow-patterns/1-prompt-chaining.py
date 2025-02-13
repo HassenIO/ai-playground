@@ -1,9 +1,13 @@
-from typing import Optional
-from datetime import datetime
-from pydantic import BaseModel, Field
-from openai import OpenAI
-import os
 import logging
+import os
+from datetime import datetime
+from typing import Optional
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+load_dotenv()
 
 # Set up logging configuration
 logging.basicConfig(
@@ -14,13 +18,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-model = "gpt-4o"
+model = "gpt-4o-mini"
+
 
 # --------------------------------------------------------------
 # Step 1: Define the data models for each stage
 # --------------------------------------------------------------
-
-
 class EventExtraction(BaseModel):
     """First LLM call: Extract basic event information"""
 
@@ -56,8 +59,6 @@ class EventConfirmation(BaseModel):
 # --------------------------------------------------------------
 # Step 2: Define the functions
 # --------------------------------------------------------------
-
-
 def extract_event_info(user_input: str) -> EventExtraction:
     """First LLM call to determine if input is a calendar event"""
     logger.info("Starting event extraction analysis")
@@ -133,8 +134,6 @@ def generate_confirmation(event_details: EventDetails) -> EventConfirmation:
 # --------------------------------------------------------------
 # Step 3: Chain the functions together
 # --------------------------------------------------------------
-
-
 def process_calendar_request(user_input: str) -> Optional[EventConfirmation]:
     """Main function implementing the prompt chain with gate check"""
     logger.info("Processing calendar request")
@@ -183,7 +182,6 @@ else:
 # --------------------------------------------------------------
 # Step 5: Test the chain with an invalid input
 # --------------------------------------------------------------
-
 user_input = "Can you send an email to Alice and Bob to discuss the project roadmap?"
 
 result = process_calendar_request(user_input)
