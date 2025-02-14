@@ -1,8 +1,13 @@
-from typing import Optional, Literal
-from pydantic import BaseModel, Field
-from openai import OpenAI
-import os
+from datetime import datetime
 import logging
+import os
+from typing import Literal, Optional
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+load_dotenv()
 
 # Set up logging configuration
 logging.basicConfig(
@@ -13,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-model = "gpt-4o"
+model = "gpt-4o-mini"
 
 # --------------------------------------------------------------
 # Step 1: Define the data models for routing and responses
@@ -96,13 +101,16 @@ def handle_new_event(description: str) -> CalendarResponse:
     """Process a new event request"""
     logger.info("Processing new event request")
 
+    today = datetime.now()
+    date_context = f"Today is {today.strftime('%A, %B %d, %Y')}."
+
     # Get event details
     completion = client.beta.chat.completions.parse(
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": "Extract details for creating a new calendar event.",
+                "content": f"{date_context} Extract details for creating a new calendar event.",
             },
             {"role": "user", "content": description},
         ],
@@ -124,13 +132,16 @@ def handle_modify_event(description: str) -> CalendarResponse:
     """Process an event modification request"""
     logger.info("Processing event modification request")
 
+    today = datetime.now()
+    date_context = f"Today is {today.strftime('%A, %B %d, %Y')}."
+
     # Get modification details
     completion = client.beta.chat.completions.parse(
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": "Extract details for modifying an existing calendar event.",
+                "content": f"{date_context} Extract details for modifying an existing calendar event.",
             },
             {"role": "user", "content": description},
         ],
@@ -170,31 +181,32 @@ def process_calendar_request(user_input: str) -> Optional[CalendarResponse]:
         return None
 
 
-# --------------------------------------------------------------
-# Step 3: Test with new event
-# --------------------------------------------------------------
+if __name__ == "__main__":
+    # --------------------------------------------------------------
+    # Step 3: Test with new event
+    # --------------------------------------------------------------
 
-new_event_input = "Let's schedule a team meeting next Tuesday at 2pm with Alice and Bob"
-result = process_calendar_request(new_event_input)
-if result:
-    print(f"Response: {result.message}")
+    new_event_input = (
+        "Let's schedule a team meeting next Tuesday at 2pm with Alice and Bob"
+    )
+    result = process_calendar_request(new_event_input)
+    if result:
+        print(f"Response: {result.message}")
 
-# --------------------------------------------------------------
-# Step 4: Test with modify event
-# --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # Step 4: Test with modify event
+    # --------------------------------------------------------------
 
-modify_event_input = (
-    "Can you move the team meeting with Alice and Bob to Wednesday at 3pm instead?"
-)
-result = process_calendar_request(modify_event_input)
-if result:
-    print(f"Response: {result.message}")
+    modify_event_input = "Can you move the team meeting with Alice and Bob to Wednesday at 3pm instead? Also ensure to include Charlie."
+    result = process_calendar_request(modify_event_input)
+    if result:
+        print(f"Response: {result.message}")
 
-# --------------------------------------------------------------
-# Step 5: Test with invalid request
-# --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # Step 5: Test with invalid request
+    # --------------------------------------------------------------
 
-invalid_input = "What's the weather like today?"
-result = process_calendar_request(invalid_input)
-if not result:
-    print("Request not recognized as a calendar operation")
+    invalid_input = "What's the weather like today?"
+    result = process_calendar_request(invalid_input)
+    if not result:
+        print("Request not recognized as a calendar operation")
